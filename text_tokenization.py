@@ -6,8 +6,6 @@ from typing import Union, Dict, Any, List, Tuple
 from sentence_splitter import split_text_into_sentences
 from ml_collections import ConfigDict
 
-import embeddings as emb
-
 
 def generate_features(example: Union[pd.Series, Dict[str, Any]], config: ConfigDict):
     """Generates embeddings and labels from the dataset examples.
@@ -40,4 +38,4 @@ def generate_features(example: Union[pd.Series, Dict[str, Any]], config: ConfigD
     text_features["summary_num_sentences"] = len(token_lens)
 
     text_features["label"] = example["genre"]
-    return text_features
+    return [text_features]

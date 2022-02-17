@@ -64,7 +64,7 @@ def contiguous_group_average_vectors(vectors, groups):
     return averaged_vectors
 
 
-def get_text_encodings(config: ConfigDict, examples: List, chunk_size=50):
+def get_text_encodings(examples: List, config: ConfigDict, chunk_size=50):
     """Generates average text encodings from text descriptions.
     
     Many of the utilities used in this function were written by Nilabhra
