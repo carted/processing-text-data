@@ -19,7 +19,6 @@ def get_bert_encoder_config(
     config = ml_collections.ConfigDict()
     config.name = "bert"
     config.input_type = tf.int32
-    config.special_token = "<UNK>"
     config.preprocessor_path = preprocessor_path
     config.encoder_path = encoder_path
     config.encoder_inputs = ["input_word_ids", "input_type_ids", "input_mask"]

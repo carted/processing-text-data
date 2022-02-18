@@ -44,11 +44,6 @@ def create_tfr_example(
 class FeaturesToSerializedExampleFn(beam.DoFn):
     """DoFn class to create a tf.train.Example from high level features."""
 
-    def __init__(self, **kwargs):
-        super()
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-
     def process(self, features):
         example = create_tfr_example(features)
         yield example.SerializeToString()

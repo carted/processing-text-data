@@ -42,7 +42,7 @@ def contiguous_group_average_vectors(vectors, groups):
 
                 `summed_vectors` is then devided by `groups` to
                 obtain the averages.
-        Author: Nilabhra Roy Chowdhury (Nilabhra@)
+        Author: Nilabhra Roy Chowdhury (@Nilabhra)
     """
     groups = tf.expand_dims(tf.cast(groups, dtype=tf.int32), axis=1)
     group_cumsum = tf.cumsum(groups)
@@ -96,8 +96,9 @@ def get_text_encodings(
             get_text_encodings.preprocessor.bert_pack_inputs,
             arguments={
                 "seq_length": tf.math.minimum(
+                    # +2 to consider the [CLS] and [SEP] tokens.
                     max_token_len + 2,
-                    config.max_seq_len,  # +2 to consider the [CLS] and [SEP] tokens.
+                    config.max_seq_len,
                 )
             },
         )
