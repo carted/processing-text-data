@@ -1,5 +1,13 @@
+# Copyright (c) Carted.
+
+# All rights reserved.
+
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
 from ml_collections import ConfigDict
-from typing import List, Dict
+from typing import List, Dict, Any
+
 import tensorflow_text
 import tensorflow_hub as hub
 import tensorflow as tf
@@ -64,7 +72,9 @@ def contiguous_group_average_vectors(vectors, groups):
     return averaged_vectors
 
 
-def get_text_encodings(examples: List, config: ConfigDict, chunk_size=50):
+def get_text_encodings(
+    examples: List[Dict[str, Any]], config: ConfigDict, chunk_size=50
+):
     """Generates average text encodings from text descriptions.
     
     Many of the utilities used in this function were written by Nilabhra
@@ -108,9 +118,15 @@ def get_text_encodings(examples: List, config: ConfigDict, chunk_size=50):
         return bert_outputs
 
     # Gather text related features.
-    text_tokens = examples["summary_tokens"]
-    text_token_lens = examples["summary_token_lens"]
-    text_num_sentences = examples["summary_num_sentences"]
+    text_tokens, text_token_lens, text_num_sentences = [], [], []
+    for example in examples:
+        text_tokens.extend(example["summary_tokens"])
+        text_token_lens.extend(example["summary_token_lens"])
+        text_num_sentences.append(example["summary_num_sentences"])
+
+    text_tokens = tf.stack(text_tokens)
+    text_token_lens = tf.stack(text_token_lens)
+    text_num_sentences = tf.stack(text_num_sentences)
 
     # Encode with BERT in a batch-wise manner to prevent OOM.
     len_idx = len(text_token_lens)
@@ -142,4 +158,8 @@ def get_text_encodings(examples: List, config: ConfigDict, chunk_size=50):
         all_bert_encodings, text_num_sentences
     )
 
-    return averaged_encodings
+    # Add the encodings to the individual examples.
+    for i, encoding in enumerate(averaged_encodings):
+        examples[i]["summary_average_embeddings"] = encoding
+
+    return examples

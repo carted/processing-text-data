@@ -1,3 +1,10 @@
+# Copyright (c) Carted.
+
+# All rights reserved.
+
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
 from apache_beam.io.tfrecordio import WriteToTFRecord
 from datetime import datetime
 import apache_beam as beam
@@ -7,20 +14,13 @@ import argparse
 import logging
 import pprint
 import math
-import sys
-import os
 
 logging.getLogger().setLevel(logging.INFO)
 
-SCRIPT_DIR = os.path.dirname(
-    os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__)))
-)
-sys.path.append(os.path.normpath(SCRIPT_DIR))
-
-from configs import get_bert_encoder_config
-from tfrecords import FeaturesToSerializedExampleFn
-from text_tokenization import generate_features
-from embeddings import get_text_encodings
+from src.feature_generation import generate_features, DecodeFromTextLineDoFn
+from src.configs import get_bert_encoder_config
+from src.tfrecords import FeaturesToSerializedExampleFn
+from src.embeddings import get_text_encodings
 
 
 # Initialize encoder configuration.
@@ -46,7 +46,7 @@ def main(
         "num_workers": "1",
         "max_num_workers": max_num_workers,
         "runner": runner,
-        "setup_file": os.path.join(SCRIPT_DIR, "setup.py"),
+        "setup_file": "./setup.py",
         "project": project,
         "region": region,
         "gcs_location": f"gs://{gcs_bucket}",
@@ -62,7 +62,7 @@ def main(
     # Load the dataframe for counting the total number of samples it has. For larger
     # datasets, this should be performed separately.
     train_df = pd.read_csv(
-        "train_data.txt",
+        f"gs://{gcs_bucket}/data/train_data.txt",
         engine="python",
         sep=" ::: ",
         names=["id", "movie", "genre", "summary"],
@@ -82,12 +82,12 @@ def main(
         )
         _ = (
             pipeline
-            | "Read file" >> beam.Create(["train_data.txt"])
-            | "Read CSV"
-            >> beam.Map(
-                pd.read_csv, sep=" ::: ", names=["id", "movie", "genre", "summary"]
+            | "Read file"
+            >> beam.io.ReadFromText(
+                f"gs://{gcs_bucket}/data/train_data.txt", skip_header_lines=True
             )
-            | "To dictionaries" >> beam.FlatMap(lambda df: df.to_dict("records"))
+            | "Parse the file and yield dictionaries"
+            >> beam.ParDo(DecodeFromTextLineDoFn())
             | "Generate features"
             >> beam.ParDo(generate_features, config=encoding_config)
             | "Intelligently Batch examples"
@@ -105,7 +105,7 @@ def main(
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="Beam pipeline for generating TFRecords from a Pandas dataframe."
+        description="Beam pipeline for generating TFRecords from a pandas dataframe."
     )
     parser.add_argument(
         "-p",

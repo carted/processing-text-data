@@ -1,5 +1,13 @@
+# Copyright (c) Carted.
+
+# All rights reserved.
+
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
 import tensorflow as tf
 import tensorflow_hub as hub
+import apache_beam as beam
 import pandas as pd
 
 from typing import Union, Dict, Any, List, Tuple
@@ -39,3 +47,16 @@ def generate_features(example: Union[pd.Series, Dict[str, Any]], config: ConfigD
 
     text_features["label"] = example["genre"]
     return [text_features]
+
+
+class DecodeFromTextLineDoFn(beam.DoFn):
+    # Mind the space.
+    def __init__(self, delimiter=" ::: "):
+        self.delimiter = delimiter
+
+    def process(self, text_line):
+        splits = text_line.split(self.delimiter)
+        genre = splits[-2]
+        summary = splits[-1]
+        packed_dict = {"summary": summary, "genre": genre}
+        yield packed_dict
