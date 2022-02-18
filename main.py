@@ -96,8 +96,8 @@ def main(
             | "Create TF Train example" >> beam.ParDo(FeaturesToSerializedExampleFn())
             | "Write TFRecord to GS Bucket"
             >> WriteToTFRecord(
-                file_path_prefix=f"gs://{gcs_bucket}/tfrecords",
-                file_name_suffix=f"_{job_timestamp}.tfrecord",
+                file_path_prefix=f"gs://{gcs_bucket}/tfrecords/",
+                file_name_suffix=f"{job_timestamp}.tfrecord",
                 num_shards=math.ceil(total_examples / 50),
             )
         )
